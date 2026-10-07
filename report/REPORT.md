@@ -1,18 +1,18 @@
-# Báo cáo Day 6: Đánh giá độ nhạy của phép chiếu LiDAR-Camera trước Calibration Drift
+# Báo cáo Day 6: Độ nhạy của projection với lệch yaw
 
 - **Họ tên:** Trần Đình Duy
 - **MSSV:** 2A202602631
 - **Lớp:** VinUni AI20K Track 4
 - **Link repo:** https://github.com/Duytd26/TranDinhDuy-2A202602631-Track4-Day21
-- **Topic:** A — Kiểm tra calibration LiDAR-camera bằng projection (LiDAR-camera projection QA)
-- **Dataset:** data/kitti_mini, data/synthetic, data/nuscenes_mini_subset
-- **Các frame đã dùng:** 000000, 000011, scene-0103_010
+- **Topic:** A — LiDAR-camera projection QA
+- **Dataset:** data/kitti_mini
+- **Các frame đã dùng:** 000008, 000011, 000049
 
 > Hãy viết ngắn: mỗi mục từ 3 đến 8 dòng, ưu tiên số liệu và hình ảnh.
 
 ## 1. Claim
 
-Lệch góc xoay yaw extrinsic LiDAR-camera từ 1.0° trở lên làm tỉ lệ điểm LiDAR rơi đúng vào 2D bounding box của đối tượng xe giảm hơn 20%, và với độ lệch 2.0° tỉ lệ này giảm hơn 40% ở cự ly 15–30 mét, đủ để gây trượt bounding box và phá vỡ tính năng sensor fusion.
+Lệch góc xoay yaw extrinsic LiDAR-camera từ 1.0° trở lên làm tỉ lệ điểm LiDAR của người đi bộ rơi đúng vào 2D bounding box giảm hơn 20 điểm phần trăm (từ >99% xuống dưới 80%), trong khi với xe con chỉ giảm dưới 5 điểm phần trăm; và khi lệch 2.0° tỉ lệ của người đi bộ giảm hơn 50%, đủ để làm sai lệch hoàn toàn tính năng sensor fusion. Hiện tượng này có thể phát hiện được bằng tỉ lệ điểm rơi trong 2D box với ngưỡng cảnh báo 85%.
 
 ## 2. Evidence
 
