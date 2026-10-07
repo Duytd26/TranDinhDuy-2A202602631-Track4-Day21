@@ -57,3 +57,4 @@ def benchmark_pipeline(frame_id: str = "000011", runs: int = 21):
 
 if __name__ == "__main__":
     benchmark_pipeline()
+

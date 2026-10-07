@@ -67,13 +67,13 @@ Kết quả benchmark quét góc lệch yaw từ 0.0° đến 3.0° trên 3 fram
 
 ## 4. Khuyến nghị nếu triển khai thật
 
-- **Use-case cụ thể:** Hệ thống hỗ trợ lái nâng cao ADAS / Tự hành cấp độ L2+/L3 ứng dụng kiến trúc Camera-LiDAR Fusion nhằm nhận diện chướng ngại vật dễ tổn thương (VRU: người đi bộ, xe đạp) ở cự ly 10–50 m.
+- **Use-case cụ thể:** Xe giao hàng tự hành trong khu đô thị (tốc độ dưới 30–50 km/h) và hệ thống ADAS L2+/L3 ứng dụng Camera-LiDAR Fusion để bảo vệ người đi bộ (VRU) ở cự ly 10–50 m.
 - **Đánh đổi khi triển khai (Trade-offs):**
-  - *Độ chính xác vs Chi phí tính toán:* Thuật toán giám sát alignment liên tục theo từng frame giúp phát hiện drift tức thì nhưng làm tăng tải CPU/GPU trên ECU nhúng. Khuyến nghị áp dụng chiến lược kiểm tra đa tầng: chạy full calibration check khi xe khởi động (start-up self-test), và chạy low-frequency health check (1–2 Hz) trên các vật thể tin cậy khi đang di chuyển.
-  - *Độ nhạy ngưỡng vs Báo động giả (False Alarms):* Đặt ngưỡng 85% phát hiện rất tốt drift $1^\circ$, tuy nhiên trong điều kiện thời tiết xấu (mưa tuyết, bụi bẩn) hoặc vật thể bị che khuất một phần (occlusion), tỉ lệ hit_ratio có thể sụt giảm giả tạo. Cần kết hợp bộ lọc trung bình trượt thời gian (temporal smoothing qua 10 frame) trước khi phát tín hiệu dừng khẩn cấp.
-- **Bước tiếp theo:**
-  - Bổ sung module Online Extrinsic Auto-Calibration tự động hiệu chỉnh lại góc yaw dựa trên phương pháp tối ưu hoá khớp cạnh chiều sâu (Depth edge alignment với Canny edge).
-  - Tích hợp bù chuyển động thời gian thực (Motion deskewing) sử dụng dữ liệu IMU / Wheel Odometry tần số cao (100 Hz).
+  - *Độ chính xác vs Tài nguyên tính toán:* Kiểm tra alignment liên tục từng frame tốn ~53 ms CPU. Khuyến nghị chỉ tính toán `hit_ratio` định kỳ (tần số thấp 1 Hz) khi xe đang di chuyển, hoặc tận dụng những thời điểm xe dừng đèn đỏ để chạy full calibration check mà không ảnh hưởng tới tài nguyên điều khiển xe thời gian thực.
+  - *Độ nhạy ngưỡng vs Báo động giả (False Alarms):* Đặt ngưỡng 85% bắt rất nhạy lệch yaw từ 1.0°, nhưng trong điều kiện mưa tuyết hoặc vật thể bị che khuất một phần (occlusion), tỉ lệ này có thể sụt giảm giả tạo. Do đó cần áp dụng bộ lọc trung bình trượt thời gian (chỉ cảnh báo khi `hit_ratio < 85%` kéo dài trong hơn 5 phút liên tục).
+- **Chỉ số cần ghi log & Bước tiếp theo:**
+  - *Chỉ số ghi log:* Ghi log `box_lidar_hit_ratio` trung bình mỗi phút và **nhiệt độ của giá đỡ cảm biến (bracket temperature)** để phân biệt chính xác hiện tượng lệch do va chạm cơ học hay do giãn nở nhiệt ban ngày/ban đêm.
+  - *Bước tiếp theo:* Tích hợp module Online Extrinsic Auto-Calibration tự động bù trừ góc lệch yaw dựa trên khớp cạnh chiều sâu (Canny edge + Depth edge), kết hợp bù chuyển động thời gian thực bằng IMU tần số 100 Hz.
 
 ## 5. Cách chạy lại
 
