@@ -40,10 +40,16 @@ Use-case cụ thể (ADAS / robot / drone), trade-off và bước tiếp theo.
 
 ## 5. Cách chạy lại
 
-Các lệnh tái tạo lại toàn bộ kết quả từ repo sạch.
+Các lệnh tái tạo lại toàn bộ kết quả từ repo sạch:
 
 ```bash
-[ĐIỀN]
+# 1. Tự kiểm tra 2 hàm projection:
+python -m src.test_projection
+
+# 2. Tạo demo overlay ở 3 khoảng cách (gần: 000019, vừa: 000011, xa: 000004):
+python -m starter.projection --data-root data/kitti_mini --frame 000019
+python -m starter.projection --data-root data/kitti_mini --frame 000011
+python -m starter.projection --data-root data/kitti_mini --frame 000004
 ```
 
 ## 6. Khai báo sử dụng AI
