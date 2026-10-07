@@ -26,3 +26,4 @@ assert mask.tolist() == [True, False, False, False], f"mask sai: {mask}"
 assert uv.shape == (1, 2) and depth.shape == (1,), "uv phải (M, 2), depth phải (M,)"
 assert np.allclose(uv[0], [614, 175], atol=1), f"pixel của (10,0,0) phải ≈ (614, 175), đang là {uv[0]}"
 print("✅ CP2 self-test passed")
+
