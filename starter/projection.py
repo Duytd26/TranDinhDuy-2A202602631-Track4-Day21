@@ -26,13 +26,15 @@ from starter.kitti_io import KittiCalib, KittiObject
 def velo_to_cam(points_xyz: np.ndarray, calib: KittiCalib) -> np.ndarray:
     """Đưa điểm (N, 3) từ velodyne frame sang rectified camera frame (N, 3).
 
-    TODO(CP2):
-      1. Chuyển sang toạ độ đồng nhất (N, 4).
-      2. Nhân với calib.T_cam_velo (4x4). Chú ý chiều nhân và transpose.
-      3. Trả về 3 cột đầu.
-    Tự kiểm: một điểm velodyne (10, 0, 0) phải có z_cam ~ 10 (phía trước camera).
+    1. Chuyển sang toạ độ đồng nhất (N, 4).
+    2. Nhân với calib.T_cam_velo (4x4).
+    3. Trả về 3 cột đầu.
     """
-    raise NotImplementedError("TODO(CP2): cài đặt velo_to_cam")
+    if points_xyz.shape[0] == 0:
+        return np.empty((0, 3), dtype=points_xyz.dtype)
+    homo = np.pad(points_xyz[:, :3], ((0, 0), (0, 1)), mode="constant", constant_values=1.0)
+    pts_cam = homo @ calib.T_cam_velo.T
+    return pts_cam[:, :3]
 
 
 def cam_to_image(points_cam: np.ndarray, P2: np.ndarray, image_shape: tuple[int, ...],
@@ -45,14 +47,44 @@ def cam_to_image(points_cam: np.ndarray, P2: np.ndarray, image_shape: tuple[int,
       mask  (N,)   bool, True nếu điểm hợp lệ
 
     Điểm hợp lệ = depth > min_depth VÀ nằm trong ảnh (0 <= u < W, 0 <= v < H).
-
-    TODO(CP2):
-      1. Lọc điểm không hợp lệ (NaN/Inf): dữ liệu thật không bao giờ sạch.
-      2. Toạ độ đồng nhất, nhân P2 -> (N, 3) = [s*u, s*v, s].
-      3. Chia cho s để có (u, v). Chỉ chia với điểm có depth > min_depth.
-      4. Lọc theo kích thước ảnh image_shape[:2] = (H, W).
     """
-    raise NotImplementedError("TODO(CP2): cài đặt cam_to_image")
+    n = points_cam.shape[0]
+    if n == 0:
+        return np.empty((0, 2), dtype=np.float32), np.empty((0,), dtype=np.float32), np.zeros(0, dtype=bool)
+
+    H, W = image_shape[:2]
+
+    # 1. Lọc điểm không hợp lệ (NaN/Inf)
+    valid_finite = np.isfinite(points_cam).all(axis=1)
+
+    u = np.zeros(n, dtype=np.float64)
+    v = np.zeros(n, dtype=np.float64)
+    depth = points_cam[:, 2].copy()
+
+    # 2. Lọc điểm có depth > min_depth
+    valid_depth = valid_finite & (depth > min_depth)
+
+    if np.any(valid_depth):
+        pts_valid = points_cam[valid_depth]
+        homo = np.pad(pts_valid, ((0, 0), (0, 1)), mode="constant", constant_values=1.0)
+        pts_2d = homo @ P2.T
+        s = pts_2d[:, 2]
+
+        s_safe = np.where(s > 1e-6, s, 1.0)
+        u_valid = pts_2d[:, 0] / s_safe
+        v_valid = pts_2d[:, 1] / s_safe
+
+        u[valid_depth] = u_valid
+        v[valid_depth] = v_valid
+
+    # 3. Lọc theo kích thước ảnh
+    in_fov = (u >= 0) & (u < W) & (v >= 0) & (v < H)
+    mask = valid_depth & in_fov
+
+    uv = np.column_stack([u[mask], v[mask]])
+    valid_depths = depth[mask]
+
+    return uv, valid_depths, mask
 
 
 def project_velo_to_image(points: np.ndarray, calib: KittiCalib, image_shape: tuple[int, ...]):
