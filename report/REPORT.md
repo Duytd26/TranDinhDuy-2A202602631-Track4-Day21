@@ -2,7 +2,7 @@
 
 - **Họ tên:** Trần Đình Duy
 - **MSSV:** 2A202602631
-- **Lớp:** VinUni AI20K Track 4
+- **Lớp:** AI20K-T4
 - **Link repo:** https://github.com/Duytd26/TranDinhDuy-2A202602631-Track4-Day21
 - **Topic:** A — LiDAR-camera projection QA
 - **Dataset:** data/kitti_mini
