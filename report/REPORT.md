@@ -36,17 +36,25 @@ Kết quả benchmark quét góc lệch yaw từ 0.0° đến 3.0° trên 3 fram
 
 ## 3. Failure case
 
-Nêu khi nào hệ thống hoặc phương pháp fail, vì sao fail, và liên hệ tới lớp nào trong 6 lớp debug: I/O, Geometry, Time, Preprocess, Model, Metric.
+![fail](../results/figures/fail_01_yaw_2deg_pedestrian.png)
 
-![failure](../results/figures/fail_[ĐIỀN].png)
+- **Trường hợp:** KITTI, frame 000011, các đối tượng người đi bộ (Pedestrian) ở cự ly 15–35 m khi góc xoay yaw extrinsic bị lệch 2.0°.
+- **Quan sát:** Toàn bộ cụm điểm LiDAR của người đi bộ bị trôi lệch sang ngang $\approx 25.2$ pixel và văng hoàn toàn ra ngoài 2D bounding box màu xanh lá trên ảnh. Tỉ lệ điểm nằm trong box (`hit_ratio`) tụt nghiêm trọng từ **99.45%** xuống còn **45.44%** (mất hơn 54% điểm trúng đích), khiến hệ thống sensor fusion không thể gán nhãn hoặc hợp nhất bounding box của camera và LiDAR.
+- **Nguyên nhân:** Lệch góc xoay yaw extrinsic $Tr_{velo\_to\_cam}$ một góc $\theta = 2.0^\circ$ tạo ra độ dịch ngang pixel trên ảnh xấp xỉ $\Delta u \approx f \cdot \tan(\theta) \approx 721.5 \cdot \tan(2.0^\circ) \approx 25.2$ pixel. Do người đi bộ ở khoảng cách trung bình–xa có bề ngang hiển thị rất nhỏ trên ảnh camera (chỉ rộng khoảng 15–20 pixel), độ trượt 25.2 pixel vượt quá hoàn toàn kích thước của bounding box.
+- **Lớp debug:** **Geometry** (Lớp hình học: sai lệch trong phép biến đổi hệ toạ độ extrinsic $Tr_{velo\_to\_cam}$).
+- **Cách phát hiện khi chạy thật:** Giám sát liên tục chỉ số `box_lidar_hit_ratio` theo thời gian thực trên các đối tượng phát hiện được. Đặt ngưỡng cảnh báo tại **85%**; nếu tỉ lệ này sụt giảm liên tiếp trong $\ge 5$ frame trên các đối tượng kích thước hẹp (Pedestrian/Cyclist), hệ thống cảnh báo lỗi calibration drift và tạm dừng tính năng tự lái cấp cao để đảm bảo an toàn.
 
-[ĐIỀN]
+*(Bổ sung failure case lớp **Time**: `fail_02_nusc_no_ego_motion.png` trên nuScenes khi không bù độ trễ 35.6 ms giữa LiDAR và camera, làm số điểm lọt vào ảnh tụt từ 3.120 xuống 2.911 điểm).*
 
 ## 4. Khuyến nghị nếu triển khai thật
 
-Use-case cụ thể (ADAS / robot / drone), trade-off và bước tiếp theo.
-
-[ĐIỀN]
+- **Use-case cụ thể:** Hệ thống hỗ trợ lái nâng cao ADAS / Tự hành cấp độ L2+/L3 ứng dụng kiến trúc Camera-LiDAR Fusion nhằm nhận diện chướng ngại vật dễ tổn thương (VRU: người đi bộ, xe đạp) ở cự ly 10–50 m.
+- **Đánh đổi khi triển khai (Trade-offs):**
+  - *Độ chính xác vs Chi phí tính toán:* Thuật toán giám sát alignment liên tục theo từng frame giúp phát hiện drift tức thì nhưng làm tăng tải CPU/GPU trên ECU nhúng. Khuyến nghị áp dụng chiến lược kiểm tra đa tầng: chạy full calibration check khi xe khởi động (start-up self-test), và chạy low-frequency health check (1–2 Hz) trên các vật thể tin cậy khi đang di chuyển.
+  - *Độ nhạy ngưỡng vs Báo động giả (False Alarms):* Đặt ngưỡng 85% phát hiện rất tốt drift $1^\circ$, tuy nhiên trong điều kiện thời tiết xấu (mưa tuyết, bụi bẩn) hoặc vật thể bị che khuất một phần (occlusion), tỉ lệ hit_ratio có thể sụt giảm giả tạo. Cần kết hợp bộ lọc trung bình trượt thời gian (temporal smoothing qua 10 frame) trước khi phát tín hiệu dừng khẩn cấp.
+- **Bước tiếp theo:**
+  - Bổ sung module Online Extrinsic Auto-Calibration tự động hiệu chỉnh lại góc yaw dựa trên phương pháp tối ưu hoá khớp cạnh chiều sâu (Depth edge alignment với Canny edge).
+  - Tích hợp bù chuyển động thời gian thực (Motion deskewing) sử dụng dữ liệu IMU / Wheel Odometry tần số cao (100 Hz).
 
 ## 5. Cách chạy lại
 
@@ -69,6 +77,9 @@ python -m src.plot_yaw_sweep
 
 # 5. Chạy phân tích mở rộng theo từng Class (Car vs Pedestrian):
 python -m src.exp_yaw_by_class --data-root data/kitti_mini --frames 000008 000011 000049
+
+# 6. Tạo các ảnh failure case so sánh trực quan (Geometry & Time):
+python -m src.make_failure_cases
 ```
 
 ## 6. Khai báo sử dụng AI
