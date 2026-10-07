@@ -34,6 +34,25 @@ Kết quả benchmark quét góc lệch yaw từ 0.0° đến 3.0° trên 3 fram
 - **Ngưỡng phát hiện lỗi calibration:** Đặt ngưỡng `hit_ratio` ở mức **85%** cho phép phát hiện sớm độ lệch yaw từ 1.0° đối với người đi bộ và từ 2.0° đối với toàn bộ các đối tượng thông thường, trước khi hệ thống fusion bị lỗi nghiêm trọng.
 - **Tính tái lập:** Thí nghiệm cố định cấu hình, chạy lại cho kết quả giống hệt 100% (`filecmp.cmp` ra `GIỐNG HỆT`).
 
+### Bằng chứng Bonus (Tối đa +10 điểm):
+
+- **[B2] Stress test suy giảm dữ liệu (Random Dropout & Gaussian Noise):**
+  - Thử nghiệm trên frame 000011 với `keep_ratio` giảm từ 100% $\to$ 70% $\to$ 50% $\to$ 30% và nhiễu Gaussian $\sigma$ từ 0 $\to$ 2 $\to$ 5 $\to$ 10 cm (`results/stress_test_perturb.csv`).
+  - *Kết quả:* Khi giảm giữ lại còn 30% điểm, số điểm trên vật thể tụt từ 725 xuống 217 điểm, nhưng `hit_ratio` vẫn giữ mức 99.54% (vì các điểm còn lại không bị lệch vị trí); trong khi nhiễu Gaussian $\sigma = 10$ cm làm tán xạ các điểm rìa khiến `hit_ratio` giảm xuống 89.66%.
+  - *Biểu đồ:* `results/figures/stress_test.png`.
+
+- **[B3] Đo latency đúng cách:**
+  - Đo 21 lần chạy trên KITTI frame 000011 (108.004 điểm), loại bỏ lần chạy đầu tiên (warm-up), tính toán trên 20 lần chạy thực tế (`results/latency_benchmark.csv`).
+  - *Phần cứng thực nghiệm:* CPU AMD Ryzen 7 3750H with Radeon Vega Mobile Gfx (4 nhân 8 luồng), 16 GB RAM.
+  - *Kết quả latency:* **p50 = 53.27 ms**, **p95 = 64.89 ms**, trung bình = 54.73 ms. Đảm bảo tần số xử lý ~18–19 Hz, đáp ứng yêu cầu realtime cho cảm biến LiDAR 10 Hz.
+
+- **[B4] Reusable CLI Tool:**
+  - Viết công cụ dòng lệnh `src/projection_tool.py` chuẩn hoá với `argparse`, có cờ `--help` chi tiết và giá trị mặc định hợp lý, chạy được ngay trên cả KITTI và nuScenes mà không cần chỉnh sửa code.
+
+- **[B5] So sánh trên cả hai dataset thật (KITTI vs nuScenes):**
+  - Chạy so sánh độ nhạy drift yaw giữa KITTI (frame 000011, $f \approx 721.5$ px, ảnh $1242 \times 375$) và nuScenes (scene-0103_010, $f \approx 1253.0$ px, ảnh $1600 \times 900$) (`results/kitti_vs_nuscenes_drift.csv`).
+  - *Kết quả:* Do nuScenes có tiêu cự $f$ lớn hơn nhiều, ở góc lệch $1.0^\circ$, điểm LiDAR trên nuScenes bị trượt $\Delta u \approx 21.87$ px (chiếm 1.37% bề rộng ảnh) so với chỉ $12.59$ px trên KITTI (chiếm 1.01% bề rộng ảnh). Điều này chứng minh hệ thống có tiêu cự camera dài (telephoto) nhạy cảm gấp đôi với lỗi calibration drift góc xoay so với camera góc rộng.
+
 ## 3. Failure case
 
 ![fail](../results/figures/fail_01_yaw_2deg_pedestrian.png)
@@ -80,6 +99,19 @@ python -m src.exp_yaw_by_class --data-root data/kitti_mini --frames 000008 00001
 
 # 6. Tạo các ảnh failure case so sánh trực quan (Geometry & Time):
 python -m src.make_failure_cases
+
+# 7. [Bonus B3] Đo latency đúng cách (p50, p95 loại bỏ warmup):
+python -m src.measure_latency
+
+# 8. [Bonus B5] So sánh độ nhạy drift trên 2 dataset thật (KITTI vs nuScenes):
+python -m src.exp_kitti_vs_nuscenes
+
+# 9. [Bonus B2] Stress test suy giảm dữ liệu (Dropout & Noise):
+python -m src.exp_stress_test
+
+# 10. [Bonus B4] Chạy thử Reusable CLI Tool:
+python -m src.projection_tool --help
+python -m src.projection_tool
 ```
 
 ## 6. Khai báo sử dụng AI
@@ -88,3 +120,4 @@ python -m src.make_failure_cases
 |---|---|---|
 | AI Assistant | Hỗ trợ giải thích lý thuyết toán học phép chiếu, rà soát công thức ma trận | Tự kiểm chứng bằng hàm test số học `src/test_projection.py` khớp kỳ vọng 100% |
 | Codelab Starter | Khung code khởi đầu đọc dữ liệu và gợi ý hàm thí nghiệm | Tự mở rộng phân tích class `src/exp_yaw_by_class.py`, kiểm tra tái lập bằng `filecmp` |
+| Thư viện OpenCV & NumPy | Thực hiện biến đổi toạ độ và vẽ trực quan hoá | Đối chiếu số liệu hit_ratio và ma trận chiếu với ground-truth KITTI |

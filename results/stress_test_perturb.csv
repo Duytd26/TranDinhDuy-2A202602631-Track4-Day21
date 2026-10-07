@@ -1,0 +1,9 @@
+perturb_type,level,total_points,object_points,hit_ratio
+random_dropout,1.0,108004,725,0.9945
+random_dropout,0.7,75504,523,0.9943
+random_dropout,0.5,53691,378,0.9974
+random_dropout,0.3,32258,223,0.9955
+gaussian_noise,0.0,108004,725,0.9945
+gaussian_noise,0.02,108004,728,0.9863
+gaussian_noise,0.05,108004,727,0.9766
+gaussian_noise,0.1,108004,733,0.9482

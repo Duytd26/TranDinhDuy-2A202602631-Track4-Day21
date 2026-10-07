@@ -1,0 +1,6 @@
+yaw_deg,kitti_shift_px,kitti_rel_shift_pct,kitti_points_in_fov,nusc_shift_px,nusc_rel_shift_pct,nusc_points_in_fov
+0.0,0.0,0.0,19946,0.0,0.0,3120
+0.5,6.3,0.51,19946,10.93,0.68,3126
+1.0,12.59,1.01,19952,21.87,1.37,3125
+2.0,25.2,2.03,19963,43.75,2.73,3126
+3.0,37.81,3.04,19948,65.66,4.1,3133
